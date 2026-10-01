@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+backend/node_modules/
+
+# nestjs build
+dist/
+backend/dist/
+
+# environment variables
+.env
+backend/.env
+
+# IDE and OS files
+.DS_Store
+.vscode/
+.idea/
+
+# chroma db local storage (if any)
+chroma_data/

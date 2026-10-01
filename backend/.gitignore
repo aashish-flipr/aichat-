@@ -1,0 +1,8 @@
+node_modules/
+
+# nestjs build
+dist/
+
+# environment variables
+.env
+
