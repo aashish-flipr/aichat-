@@ -1,5 +1,7 @@
 import React from "react";
 import type { Message } from "../../types";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import styles from "./ChatArea.module.scss";
 
 interface ChatAreaProps {
@@ -34,18 +36,18 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
             className={`${styles.messageWrapper} ${styles[msg.role]} animate-fade-in`}
             style={{ animationDelay: `${Math.min(idx * 0.1, 0.5)}s` }}
           >
-            <div className={styles.avatar}>{msg.role === "ai" ? "🤖" : "👤"}</div>
             <div className={styles.messageContent}>
-              {msg.content.split("\n").map((line, i) => (
-                <p key={i}>{line}</p>
-              ))}
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {msg.content}
+              </ReactMarkdown>
             </div>
           </div>
         ))}
         {isLoading && (
           <div className={`${styles.messageWrapper} ${styles.ai}`}>
-            <div className={styles.avatar}>🤖</div>
-            <div className={`${styles.messageContent} ${styles.typingIndicator}`}>
+            <div
+              className={`${styles.messageContent} ${styles.typingIndicator}`}
+            >
               <span></span>
               <span></span>
               <span></span>
@@ -56,7 +58,10 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
       </div>
 
       <div className={styles.inputArea}>
-        <form className={`${styles.inputForm} glass-panel`} onSubmit={onSendMessage}>
+        <form
+          className={`${styles.inputForm} glass-panel`}
+          onSubmit={onSendMessage}
+        >
           <textarea
             value={inputValue}
             onChange={(e) => onInputChange(e.target.value)}
@@ -89,9 +94,6 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
             </svg>
           </button>
         </form>
-        <div className={styles.footerText}>
-          QueryChat can make mistakes. Consider verifying important information.
-        </div>
       </div>
     </main>
   );

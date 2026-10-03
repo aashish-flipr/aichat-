@@ -3,3 +3,8 @@ export interface Message {
   role: 'human' | 'ai';
   content: string;
 }
+
+export interface SessionInfo {
+  id: string;
+  name: string;
+}

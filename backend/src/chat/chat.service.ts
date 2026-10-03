@@ -4,7 +4,11 @@ import { Model } from 'mongoose';
 import { ChatHistory } from './schemas/chat-history.schema.js';
 import { LlmService } from '../llm/llm.service.js';
 import { ChromaService } from '../chroma/chroma.service.js';
-import { HumanMessage, AIMessage, SystemMessage } from '@langchain/core/messages';
+import {
+  HumanMessage,
+  AIMessage,
+  SystemMessage,
+} from '@langchain/core/messages';
 
 @Injectable()
 export class ChatService {
@@ -13,22 +17,27 @@ export class ChatService {
   constructor(
     @InjectModel(ChatHistory.name) private chatModel: Model<ChatHistory>,
     private llmService: LlmService,
-    private chromaService: ChromaService
+    private chromaService: ChromaService,
   ) {}
 
   async sendMessage(sessionId: string, userMessage: string): Promise<string> {
     this.logger.log(`Processing message for session: ${sessionId}`);
-    
+
     // 1. Semantic Search
     const vectorStore = this.chromaService.getVectorStore();
     const searchResults = await vectorStore.similaritySearch(userMessage, 3);
-    const contextText = searchResults.map(doc => doc.pageContent).join('\n---\n');
+    const contextText = searchResults
+      .map((doc) => doc.pageContent)
+      .join('\n---\n');
 
     this.logger.log(`Found ${searchResults.length} relevant chunks`);
 
     // 2. Fetch Chat History from Mongo
-    const history = await this.chatModel.find({ sessionId }).sort({ createdAt: 1 }).exec();
-    
+    const history = await this.chatModel
+      .find({ sessionId })
+      .sort({ createdAt: 1 })
+      .exec();
+
     // 3. Construct Prompt Messages
     const systemPrompt = `You are a strict AI assistant. Your ONLY job is to answer the user's question using EXACTLY the information provided in the context below.
 DO NOT add your own explanations, DO NOT elaborate, and DO NOT use outside knowledge. 
@@ -38,7 +47,7 @@ Context:
 ${contextText}`;
 
     const messages: any[] = [new SystemMessage(systemPrompt)];
-    
+
     // Add history
     for (const msg of history) {
       if (msg.role === 'human') messages.push(new HumanMessage(msg.content));
@@ -54,22 +63,45 @@ ${contextText}`;
     const aiMessageContent = response.content.toString();
 
     // 5. Save both messages to Mongo
-    await this.chatModel.create({ sessionId, role: 'human', content: userMessage });
-    await this.chatModel.create({ sessionId, role: 'ai', content: aiMessageContent });
+    await this.chatModel.create({
+      sessionId,
+      role: 'human',
+      content: userMessage,
+    });
+    await this.chatModel.create({
+      sessionId,
+      role: 'ai',
+      content: aiMessageContent,
+    });
 
     return aiMessageContent;
   }
 
   async getSessions() {
-    // Group by sessionId and sort by latest activity
+    // Group by sessionId, capturing the first message for the title and max date for sorting
     const sessions = await this.chatModel.aggregate([
-      { $group: { _id: "$sessionId", lastActivity: { $max: "$createdAt" } } },
-      { $sort: { lastActivity: -1 } }
+      { $sort: { createdAt: 1 } },
+      {
+        $group: {
+          _id: '$sessionId',
+          firstMessage: { $first: '$content' },
+          lastActivity: { $max: '$createdAt' },
+        },
+      },
+      { $sort: { lastActivity: -1 } },
     ]);
-    return sessions.map(s => s._id);
+
+    return sessions.map((s) => {
+      let title = s.firstMessage || 'New Chat';
+      if (title.length > 30) title = title.substring(0, 30) + '...';
+      return { id: s._id, name: title };
+    });
   }
 
   async getSessionHistory(sessionId: string) {
-    return await this.chatModel.find({ sessionId }).sort({ createdAt: 1 }).exec();
+    return await this.chatModel
+      .find({ sessionId })
+      .sort({ createdAt: 1 })
+      .exec();
   }
 }

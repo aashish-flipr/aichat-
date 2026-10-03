@@ -41,10 +41,10 @@ export class IngestController {
     if (file) {
       let fileText = '';
       if (file.originalname.toLowerCase().endsWith('.pdf')) {
-        const pdfParseModule = (await import('pdf-parse')) as any;
-        const pdfParse = pdfParseModule.default || pdfParseModule;
-        const pdfData = await pdfParse(file.buffer);
-        fileText = pdfData.text;
+        const { PDFParse } = await import('pdf-parse');
+        const parser = new PDFParse({ data: file.buffer });
+        const textResult = await parser.getText();
+        fileText = textResult.text;
       } else {
         fileText = file.buffer.toString('utf8');
       }

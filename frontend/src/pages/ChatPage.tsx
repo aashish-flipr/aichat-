@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Sidebar } from "../components/Sidebar/Sidebar";
 import { ChatArea } from "../components/ChatArea/ChatArea";
 import { UploadModal } from "../components/UploadModal/UploadModal";
-import type { Message } from "../types";
+import type { Message, SessionInfo } from "../types";
 import styles from "./ChatPage.module.scss";
 
 export const ChatPage: React.FC = () => {
@@ -16,9 +16,11 @@ export const ChatPage: React.FC = () => {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState(`session-${Math.random().toString(36).substr(2, 9)}`);
+  const [sessionId, setSessionId] = useState(
+    `session-${Math.random().toString(36).substr(2, 9)}`,
+  );
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [sessions, setSessions] = useState<string[]>([]);
+  const [sessions, setSessions] = useState<SessionInfo[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -34,12 +36,18 @@ export const ChatPage: React.FC = () => {
   useEffect(() => {
     const fetchSessions = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/chat/sessions`);
-        const data = await res.json();
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/chat/sessions`,
+        );
+        const data: SessionInfo[] = await res.json();
         setSessions(data);
-        if (data.length > 0 && messages.length === 1 && messages[0].id === "1") {
+        if (
+          data.length > 0 &&
+          messages.length === 1 &&
+          messages[0].id === "1"
+        ) {
           // If we have history but haven't started chatting, load the latest session
-          setSessionId(data[0]);
+          setSessionId(data[0].id);
         }
       } catch (err) {
         console.error("Failed to fetch sessions", err);
@@ -52,13 +60,15 @@ export const ChatPage: React.FC = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/chat/history/${sessionId}`);
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/chat/history/${sessionId}`,
+        );
         const data = await res.json();
         if (data && data.length > 0) {
           const loadedMessages = data.map((msg: any) => ({
             id: msg._id,
             role: msg.role,
-            content: msg.content
+            content: msg.content,
           }));
           setMessages(loadedMessages);
         } else {
@@ -66,7 +76,8 @@ export const ChatPage: React.FC = () => {
             {
               id: "1",
               role: "ai",
-              content: "Hello! I am your intelligent assistant. How can I help you today?",
+              content:
+                "Hello! I am your intelligent assistant. How can I help you today?",
             },
           ]);
         }
@@ -95,10 +106,12 @@ export const ChatPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      if (!sessions.includes(sessionId)) {
-        setSessions((prev) => [sessionId, ...prev]);
+      if (!sessions.some((s) => s.id === sessionId)) {
+        let title = userMsg.content;
+        if (title.length > 30) title = title.substring(0, 30) + "...";
+        setSessions((prev) => [{ id: sessionId, name: title }, ...prev]);
       }
-      
+
       const response = await fetch(`${import.meta.env.VITE_API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

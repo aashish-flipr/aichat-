@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import styles from "./Sidebar.module.scss";
+import type { SessionInfo } from "../../types";
 
 interface SidebarProps {
-  sessions: string[];
+  sessions: SessionInfo[];
   currentSession: string;
   onSelectSession: (id: string) => void;
   onOpenUpload: () => void;
@@ -32,7 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         setWidth(newWidth);
       }
     },
-    [isResizing]
+    [isResizing],
   );
 
   const stopResizing = useCallback(() => {
@@ -51,14 +52,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [isResizing, resize, stopResizing]);
 
   return (
-    <aside 
-      className={styles.sidebar} 
-      style={{ width }}
-    >
-      <div 
-        className={styles.resizer} 
-        onMouseDown={startResizing} 
-      />
+    <aside className={styles.sidebar} style={{ width }}>
+      <div className={styles.resizer} onMouseDown={startResizing} />
       <div className={styles.sidebarHeader}>
         <h2 className="gradient-text">QueryChat</h2>
         <button className={styles.newChatBtn} onClick={onNewChat}>
@@ -83,10 +78,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className={styles.historyItem}>No past chats</div>
         )}
         {sessions.map((session) => (
-          <div 
-            key={session}
-            className={`${styles.historyItem} ${session === currentSession ? styles.active : ''}`}
-            onClick={() => onSelectSession(session)}
+          <div
+            key={session.id}
+            className={`${styles.historyItem} ${session.id === currentSession ? styles.active : ""}`}
+            onClick={() => onSelectSession(session.id)}
           >
             <svg
               viewBox="0 0 24 24"
@@ -100,7 +95,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
-            {session}
+            {session.name}
           </div>
         ))}
       </div>
