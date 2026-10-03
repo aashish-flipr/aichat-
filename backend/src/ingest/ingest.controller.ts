@@ -4,24 +4,58 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Body,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { IngestService } from './ingest.service.js';
 import * as multer from 'multer';
 
-@Controller('ingest')
+@Controller('send')
 export class IngestController {
   constructor(private readonly ingestService: IngestService) {}
 
-  @Post('upload')
+  @Post()
   @UseInterceptors(FileInterceptor('file', { storage: multer.memoryStorage() }))
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
+  async ingestData(
+    @UploadedFile() file?: Express.Multer.File,
+    @Body('text') text?: string,
+    @Body('source') source?: string,
+  ) {
+    if (!file && !text) {
+      throw new BadRequestException('Either a file or text must be provided');
     }
 
-    const fileText = file.buffer.toString('utf8');
+    const results = [];
 
-    return this.ingestService.processAndIngestText(fileText, file.originalname);
+    // Agar text aaya hai, toh pehle usko save karo
+    if (text) {
+      const sourceName = source || 'raw-text-input';
+      const textResult = await this.ingestService.processAndIngestText(
+        text,
+        sourceName,
+      );
+      results.push({ type: 'text', result: textResult });
+    }
+
+    // Agar file aayi hai, toh usko process karo
+    if (file) {
+      let fileText = '';
+      if (file.originalname.toLowerCase().endsWith('.pdf')) {
+        const pdfParseModule = (await import('pdf-parse')) as any;
+        const pdfParse = pdfParseModule.default || pdfParseModule;
+        const pdfData = await pdfParse(file.buffer);
+        fileText = pdfData.text;
+      } else {
+        fileText = file.buffer.toString('utf8');
+      }
+
+      const fileResult = await this.ingestService.processAndIngestText(
+        fileText,
+        file.originalname,
+      );
+      results.push({ type: 'file', result: fileResult });
+    }
+
+    return { success: true, ingested: results };
   }
 }

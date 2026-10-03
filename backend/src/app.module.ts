@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { LlmModule } from './llm/llm.module.js';
 import { ChromaModule } from './chroma/chroma.module.js';
 import { IngestModule } from './ingest/ingest.module.js';
+import { ChatModule } from './chat/chat.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 
@@ -16,6 +17,7 @@ import { AppService } from './app.service.js';
     LlmModule,
     ChromaModule,
     IngestModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -16,10 +16,7 @@
     "start:prod": "node dist/main",
     "lint": "oxlint src/ test/",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "test:cov": "vitest run --coverage",
-    "test:debug": "vitest --inspect-brk --no-file-parallelism",
-    "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@chroma-core/default-embed": "^0.1.9",
@@ -34,6 +31,7 @@
     "@nestjs/platform-express": "^12.0.1",
     "chromadb": "^3.5.0",
     "mongoose": "^9.10.3",
+    "pdf-parse": "^2.4.5",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
@@ -54,5 +52,10 @@
     "typescript": "^6.0.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.1.2"
+  },
+  "overrides": {
+    "sharp": "^0.32.6",
+    "tmp": "^0.2.3",
+    "undici": "^6.28.0"
   }
 }
